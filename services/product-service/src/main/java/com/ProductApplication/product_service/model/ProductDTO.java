@@ -33,4 +33,8 @@ public class ProductDTO {
     private LocalDateTime createdAt;
     @Getter @Setter
     private LocalDateTime updatedAt;
+    @Getter @Setter
+    private String categoryName;
+    @Getter @Setter
+    private String categoryDescription;
 }

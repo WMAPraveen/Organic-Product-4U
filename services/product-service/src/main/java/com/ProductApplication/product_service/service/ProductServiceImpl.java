@@ -1,6 +1,7 @@
 package com.ProductApplication.product_service.service;
 
 import com.ProductApplication.product_service.entity.Product;
+import com.ProductApplication.product_service.model.CategoryDTO;
 import com.ProductApplication.product_service.model.ProductDTO;
 import com.ProductApplication.product_service.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +19,16 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 public class ProductServiceImpl implements ProductService {
 
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    private WebClient.Builder webClientBuilder;
 
     @Value("${app.image.base-url}")
     private String imageBaseUrl;
@@ -171,7 +176,27 @@ public class ProductServiceImpl implements ProductService {
         return "Product Not Found";
     }
 
+
+    //fetches category details from category-service
+
+    private CategoryDTO fetchCategory(Integer categoryId) {
+        if (categoryId == null) return null;
+        try {
+            return webClientBuilder.build()
+                    .get()
+                    .uri("http://category-service/api/category/" + categoryId)
+                    .retrieve()
+                    .bodyToMono(CategoryDTO.class)
+                    .block();
+        } catch (Exception e) {
+            System.out.println("Could not fetch category: " + e.getMessage());
+            return null;
+        }
+    }
+
+
     // convert product to productDTO's for get from database........
+
 
     public ProductDTO convertProducttoProductDTO(Product product) {
         ProductDTO productDTO = new ProductDTO();
@@ -184,8 +209,15 @@ public class ProductServiceImpl implements ProductService {
         productDTO.setCardImageUrls(product.getCardImageURLs());
         productDTO.setDetailImageUrls(product.getDetailImageURLs());
 
+        CategoryDTO category = fetchCategory(product.getCategoryId());
+        if (category != null) {
+            productDTO.setCategoryName(category.getCategoryName());
+            productDTO.setCategoryDescription(category.getCategoryDescription());
+        }
+
         return productDTO;
     }
+
 
     // convert productDTO's to product for store in database........
 
