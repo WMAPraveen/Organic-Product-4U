@@ -38,7 +38,7 @@ public class InventoryController {
         return inventoryService.updateInventory(inventoryDTO);
     }
 
-    @DeleteMapping(value = "/api/inventory/{inventoryId}")
+    @DeleteMapping(value = "/api/deleteinventory/{inventoryId}")
     public String deleteInventory(@PathVariable Integer inventoryId) {
         return inventoryService.deleteInventory(inventoryId);
     }

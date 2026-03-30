@@ -1,9 +1,12 @@
 package com.UserApplication.user_service.service;
 
 import com.UserApplication.user_service.entity.User;
+import com.UserApplication.user_service.model.LoginDTO;
 import com.UserApplication.user_service.model.UserDTO;
 import com.UserApplication.user_service.repository.UserRepository;
+import com.UserApplication.user_service.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,11 +18,24 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     UserRepository userRepository;
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
-    public UserDTO addUser(UserDTO userDTO) {
-        System.out.println("Received request to add user: " + userDTO.getUsername());
+    public UserDTO register(UserDTO userDTO) {
+        System.out.println("Received request to register user: " + userDTO.getUsername());
+
+        // check email not already taken
+        if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists: " + userDTO.getEmail());
+        }
+
         User user = convertUserDTOtoUser(userDTO);
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setRole("USER");
         User savedUser = userRepository.save(user);
         return convertUsertoUserDTO(savedUser);
     }
@@ -62,7 +78,6 @@ public class UserServiceImpl implements UserService {
             user.setUsername(userDTO.getUsername());
             user.setPassword(userDTO.getPassword());
             user.setEmail(userDTO.getEmail());
-            user.setRole(userDTO.getRole());
             user.setFirstName(userDTO.getFirstName());
             user.setLastName(userDTO.getLastName());
 
@@ -85,6 +100,28 @@ public class UserServiceImpl implements UserService {
         }
         return "User Not Found";
     }
+
+    public LoginDTO login(LoginDTO loginDTO) {
+
+        Optional<User> userOptional = userRepository.findByUsername(loginDTO.getUsername());
+
+        if (userOptional.isEmpty()) return null;
+
+        User user = userOptional.get();
+
+        // simple password check — in production use BCrypt
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) return null;
+
+        // generate token with username and role
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
+
+        LoginDTO response = new LoginDTO();
+        response.setUsername(user.getUsername());
+        response.setRole(user.getRole());
+        response.setToken(token);
+        return response;
+    }
+
 
     public UserDTO convertUsertoUserDTO(User user) {
         UserDTO userDTO = new UserDTO();

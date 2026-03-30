@@ -33,7 +33,7 @@ public class CategoryController {
         return categoryService.updateCategory(categoryDTO);
     }
 
-    @DeleteMapping(value = "/api/category/{categoryId}")
+    @DeleteMapping(value = "/api/deletecategory/{categoryId}")
     public String deleteCategory(@PathVariable Integer categoryId) {
         return categoryService.deleteCategory(categoryId);
     }

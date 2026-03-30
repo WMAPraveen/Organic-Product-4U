@@ -3,6 +3,8 @@ package com.ProductApplication.product_service.controller;
 import com.ProductApplication.product_service.model.ProductDTO;
 import com.ProductApplication.product_service.service.ProductServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -14,9 +16,15 @@ public class ProductController {
     ProductServiceImpl productService;
 
 
-    @PostMapping(value = "/api/addproduct")
-    public ProductDTO addProduct(@ModelAttribute ProductDTO productDTO) {
-        return productService.addProduct(productDTO);
+    public ResponseEntity<?> addProduct(
+            @ModelAttribute ProductDTO productDTO,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(productService.addProduct(productDTO));
     }
 
     @GetMapping(value = "/api/product/{productId}")
@@ -35,13 +43,28 @@ public class ProductController {
     }
 
     @PutMapping(value = "/api/updateproduct")
-    public ProductDTO updateProduct(@ModelAttribute ProductDTO productDTO) {
-        return productService.updateProduct(productDTO);
+    public ResponseEntity<?> updateProduct(
+            @ModelAttribute ProductDTO productDTO,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(productService.updateProduct(productDTO));
     }
 
+
     @DeleteMapping(value = "/api/deleteproduct/{productId}")
-    public String deleteProduct(@PathVariable String productId) {
-        return productService.deleteProduct(productId);
+    public ResponseEntity<?> deleteProduct(
+            @PathVariable String productId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(productService.deleteProduct(productId));
     }
 
     @GetMapping(value = "/api/productlist/{categoryId}")

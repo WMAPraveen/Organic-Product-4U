@@ -3,6 +3,8 @@ package com.UserApplication.user_service.controller;
 import com.UserApplication.user_service.model.UserDTO;
 import com.UserApplication.user_service.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -13,33 +15,71 @@ public class UserController {
     @Autowired
     UserService userService;
 
-    @PostMapping(value = "/api/adduser")
-    public UserDTO addUser(@RequestBody UserDTO userDTO) {
-        return userService.addUser(userDTO);
+    //  anyone can register (no token needed)
+    @PostMapping(value = "/api/register")
+    public ResponseEntity<?> register(@RequestBody UserDTO userDTO) {
+        try {
+            UserDTO registered = userService.register(userDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(registered);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
+    //  ADMIN only — get user by id
     @GetMapping(value = "/api/user/{userId}")
-    public UserDTO getUserById(@PathVariable String userId) {
-        return userService.getUserById(userId);
+    public ResponseEntity<?> getUserById(
+            @PathVariable String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(userService.getUserById(userId));
     }
 
+    //  ADMIN only — get user by username
     @GetMapping(value = "/api/user/username/{username}")
-    public UserDTO getUserByUsername(@PathVariable String username) {
-        return userService.getUserByUsername(username);
+    public ResponseEntity<?> getUserByUsername(
+            @PathVariable String username,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(userService.getUserByUsername(username));
     }
 
+    //  ADMIN only — get all users
     @GetMapping(value = "/api/userlist")
-    public ArrayList<UserDTO> getUserList() {
-        return userService.getAllUsers();
+    public ResponseEntity<?> getUserList(
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
+    //  USER — update own profile
     @PutMapping(value = "/api/updateuser")
-    public UserDTO updateUser(@RequestBody UserDTO userDTO) {
-        return userService.updateUser(userDTO);
+    public ResponseEntity<?> updateUser(@RequestBody UserDTO userDTO) {
+        return ResponseEntity.ok(userService.updateUser(userDTO));
     }
 
+    //  ADMIN only — delete user
     @DeleteMapping(value = "/api/deleteuser/{userId}")
-    public String deleteUser(@PathVariable String userId) {
-        return userService.deleteUser(userId);
+    public ResponseEntity<?> deleteUser(
+            @PathVariable String userId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(userService.deleteUser(userId));
     }
 }

@@ -3,6 +3,8 @@ package com.OrderApplication.order_service.controller;
 import com.OrderApplication.order_service.model.OrderDTO;
 import com.OrderApplication.order_service.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -29,8 +31,14 @@ public class OrderController {
     }
 
     @GetMapping(value = "/api/orderlist")
-    public ArrayList<OrderDTO> getOrderList() {
-        return orderService.getAllOrders();
+    public ResponseEntity<?> getOrderList(
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(orderService.getAllOrders());
     }
 
     @PutMapping(value = "/api/updateorder")
@@ -39,7 +47,14 @@ public class OrderController {
     }
 
     @DeleteMapping(value = "/api/deleteorder/{orderId}")
-    public String deleteOrder(@PathVariable String orderId) {
-        return orderService.deleteOrder(orderId);
+    public ResponseEntity<?> deleteOrder(
+            @PathVariable String orderId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(orderService.deleteOrder(orderId));
     }
 }
