@@ -105,23 +105,25 @@ public class UserServiceImpl implements UserService {
 
         Optional<User> userOptional = userRepository.findByUsername(loginDTO.getUsername());
 
-        if (userOptional.isEmpty()) return null;
+        if (userOptional.isEmpty())
+            return null;
 
         User user = userOptional.get();
 
         // simple password check — in production use BCrypt
-        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) return null;
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword()))
+            return null;
 
         // generate token with username and role
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
 
         LoginDTO response = new LoginDTO();
+        response.setUserId(user.getUserId());
         response.setUsername(user.getUsername());
         response.setRole(user.getRole());
         response.setToken(token);
         return response;
     }
-
 
     public UserDTO convertUsertoUserDTO(User user) {
         UserDTO userDTO = new UserDTO();
@@ -140,7 +142,6 @@ public class UserServiceImpl implements UserService {
         user.setUsername(userDTO.getUsername());
         user.setPassword(userDTO.getPassword());
         user.setEmail(userDTO.getEmail());
-        // Set a default role if not provided
         user.setRole(userDTO.getRole() != null ? userDTO.getRole() : "USER");
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());

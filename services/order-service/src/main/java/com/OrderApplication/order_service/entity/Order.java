@@ -25,4 +25,10 @@ public class Order {
     
     @Column(name="status")
     private String status;
+
+    @Column(name="product_id")
+    private String productId;
+    
+    @Column(name="quantity")
+    private Integer quantity;
 }

@@ -23,7 +23,6 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
-
     // utgoing call ---
 
     private UserDTO fetchUser(String userId) {
@@ -31,6 +30,7 @@ public class OrderServiceImpl implements OrderService {
             return webClientBuilder.build()
                     .get()
                     .uri("http://user-service/api/user/" + userId)
+                    .header("X-User-Role", "ADMIN") // internal service-to-service call
                     .retrieve()
                     .bodyToMono(UserDTO.class)
                     .block();
@@ -44,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
             return webClientBuilder.build()
                     .get()
                     .uri("http://product-service/api/product/" + productId)
+                    .header("X-User-Role", "ADMIN") // internal service-to-service call
                     .retrieve()
                     .bodyToMono(ProductDTO.class)
                     .block();
@@ -64,8 +65,6 @@ public class OrderServiceImpl implements OrderService {
             return null;
         }
     }
-
-
 
     @Override
     public OrderDTO addOrder(OrderDTO orderDTO) {
@@ -135,6 +134,8 @@ public class OrderServiceImpl implements OrderService {
         if (orderOptional.isPresent()) {
             Order order = orderOptional.get();
             order.setUserId(orderDTO.getUserId());
+            order.setProductId(orderDTO.getProductId());
+            order.setQuantity(orderDTO.getQuantity());
             order.setOrderTotal(orderDTO.getOrderTotal());
             order.setStatus(orderDTO.getStatus());
 
@@ -160,6 +161,8 @@ public class OrderServiceImpl implements OrderService {
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setOrderId(order.getOrderId());
         orderDTO.setUserId(order.getUserId());
+        orderDTO.setProductId(order.getProductId());
+        orderDTO.setQuantity(order.getQuantity());
         orderDTO.setOrderTotal(order.getOrderTotal());
         orderDTO.setStatus(order.getStatus());
         return orderDTO;
@@ -169,6 +172,8 @@ public class OrderServiceImpl implements OrderService {
         Order order = new Order();
         // ID is auto-generated
         order.setUserId(orderDTO.getUserId());
+        order.setProductId(orderDTO.getProductId());
+        order.setQuantity(orderDTO.getQuantity());
         order.setOrderTotal(orderDTO.getOrderTotal());
         order.setStatus(orderDTO.getStatus() != null ? orderDTO.getStatus() : "PENDING");
         return order;

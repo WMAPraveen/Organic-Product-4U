@@ -1,8 +1,10 @@
 package com.UserApplication.user_service.model;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+@NoArgsConstructor
 public class UserDTO {
 
     @Getter @Setter

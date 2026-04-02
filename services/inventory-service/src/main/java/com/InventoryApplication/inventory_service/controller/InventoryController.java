@@ -3,6 +3,8 @@ package com.InventoryApplication.inventory_service.controller;
 import com.InventoryApplication.inventory_service.model.InventoryDTO;
 import com.InventoryApplication.inventory_service.service.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -14,8 +16,15 @@ public class InventoryController {
     InventoryService inventoryService;
 
     @PostMapping(value = "/api/addinventory")
-    public InventoryDTO addInventory(@RequestBody InventoryDTO inventoryDTO) {
-        return inventoryService.addInventory(inventoryDTO);
+    public ResponseEntity<?> addInventory(
+            @RequestBody InventoryDTO inventoryDTO,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(inventoryService.addInventory(inventoryDTO));
     }
 
     @GetMapping(value = "/api/inventory/{inventoryId}")
@@ -34,12 +43,26 @@ public class InventoryController {
     }
 
     @PutMapping(value = "/api/updateinventory")
-    public InventoryDTO updateInventory(@RequestBody InventoryDTO inventoryDTO) {
-        return inventoryService.updateInventory(inventoryDTO);
+    public ResponseEntity<?> updateInventory(
+            @RequestBody InventoryDTO inventoryDTO,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(inventoryService.updateInventory(inventoryDTO));
     }
 
     @DeleteMapping(value = "/api/deleteinventory/{inventoryId}")
-    public String deleteInventory(@PathVariable Integer inventoryId) {
-        return inventoryService.deleteInventory(inventoryId);
+    public ResponseEntity<?> deleteInventory(
+            @PathVariable Integer inventoryId,
+            @RequestHeader(value = "X-User-Role", required = false) String role) {
+
+        if (!"ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Access denied — admin only");
+        }
+        return ResponseEntity.ok(inventoryService.deleteInventory(inventoryId));
     }
 }

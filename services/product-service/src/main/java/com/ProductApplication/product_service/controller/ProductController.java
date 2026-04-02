@@ -16,6 +16,7 @@ public class ProductController {
     ProductServiceImpl productService;
 
 
+    @PostMapping(value = "/api/addproduct")
     public ResponseEntity<?> addProduct(
             @ModelAttribute ProductDTO productDTO,
             @RequestHeader(value = "X-User-Role", required = false) String role) {

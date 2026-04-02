@@ -16,8 +16,12 @@ public class OrderController {
     OrderService orderService;
 
     @PostMapping(value = "/api/addorder")
-    public OrderDTO addOrder(@RequestBody OrderDTO orderDTO) {
-        return orderService.addOrder(orderDTO);
+    public ResponseEntity<?> addOrder(@RequestBody OrderDTO orderDTO) {
+        try {
+            return ResponseEntity.ok(orderService.addOrder(orderDTO));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping(value = "/api/order/{orderId}")
