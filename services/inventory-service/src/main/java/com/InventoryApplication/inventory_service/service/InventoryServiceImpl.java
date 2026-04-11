@@ -5,6 +5,7 @@ import com.InventoryApplication.inventory_service.model.InventoryDTO;
 import com.InventoryApplication.inventory_service.repository.InventoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +34,9 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public InventoryDTO getInventoryByProductId(String productId) {
-        Inventory inventory = inventoryRepository.findByProductId(productId);
-        if (inventory != null) {
-            return convertInventorytoInventoryDTO(inventory);
-        }
-        return null;
+        return inventoryRepository.findByProductId(productId)
+                .map(this::convertInventorytoInventoryDTO)
+                .orElse(null);
     }
 
     @Override
@@ -97,5 +96,19 @@ public class InventoryServiceImpl implements InventoryService {
         inventory.setProductId(inventoryDTO.getProductId());
         inventory.setQuantity(inventoryDTO.getQuantity());
         return inventory;
+    }
+
+
+    @Transactional
+    public boolean deductStock(String productId, int quantity) {
+        Optional<Inventory> inventoryOpt = inventoryRepository.findByProductId(productId);
+        if (inventoryOpt.isEmpty()) return false;
+
+        Inventory inventory = inventoryOpt.get();
+        if (inventory.getQuantity() < quantity) return false;
+
+        inventory.setQuantity(inventory.getQuantity() - quantity);
+        inventoryRepository.save(inventory);
+        return true;
     }
 }

@@ -10,4 +10,5 @@ public interface InventoryService {
     ArrayList<InventoryDTO> getAllInventories();
     InventoryDTO updateInventory(InventoryDTO inventoryDTO);
     String deleteInventory(Integer inventoryId);
+    boolean deductStock(String productId, int quantity);
 }

@@ -8,6 +8,7 @@ import com.OrderApplication.order_service.model.UserDTO;
 import com.OrderApplication.order_service.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
@@ -67,6 +68,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderDTO addOrder(OrderDTO orderDTO) {
         System.out.println("Received request to add order for user: " + orderDTO.getUserId());
 
@@ -87,10 +89,17 @@ public class OrderServiceImpl implements OrderService {
         if (inventory == null || inventory.getQuantity() < orderDTO.getQuantity()) {
             throw new RuntimeException("Insufficient stock for product: " + orderDTO.getProductId());
         }
-
-        // 4. All good — save the order
         Order order = convertOrderDTOtoOrder(orderDTO);
+        // 4. Save the order
         Order savedOrder = orderRepository.save(order);
+
+        // 5. Deduct inventory
+        boolean deducted = deductInventory(orderDTO.getProductId(), orderDTO.getQuantity());
+        if (!deducted) {
+            // order saved but inventory failed
+            throw new RuntimeException("Failed to deduct inventory");
+        }
+
         return convertOrdertoOrderDTO(savedOrder);
     }
 
@@ -177,5 +186,21 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderTotal(orderDTO.getOrderTotal());
         order.setStatus(orderDTO.getStatus() != null ? orderDTO.getStatus() : "PENDING");
         return order;
+    }
+
+    private boolean deductInventory(String productId, int quantity) {
+        try {
+            return Boolean.TRUE.equals(
+                    webClientBuilder.build()
+                            .put()
+                            .uri("http://inventory-service/api/inventory/deduct/" + productId
+                                    + "?quantity=" + quantity)
+                            .retrieve()
+                            .bodyToMono(Boolean.class)
+                            .block()
+            );
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

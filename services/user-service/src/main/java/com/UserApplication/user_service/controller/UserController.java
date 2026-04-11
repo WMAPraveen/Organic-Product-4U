@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 
 @RestController
 public class UserController {
@@ -66,8 +65,14 @@ public class UserController {
 
     //  USER — update own profile
     @PutMapping(value = "/api/updateuser")
-    public ResponseEntity<?> updateUser(@RequestBody UserDTO userDTO) {
-        return ResponseEntity.ok(userService.updateUser(userDTO));
+    public ResponseEntity<?> updateUser(
+            @RequestHeader(value = "Authorization", required = false) String tokenHeader,
+            @RequestBody UserDTO userDTO) {
+        try {
+            return ResponseEntity.ok(userService.updateUser(tokenHeader, userDTO));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     //  ADMIN only — delete user

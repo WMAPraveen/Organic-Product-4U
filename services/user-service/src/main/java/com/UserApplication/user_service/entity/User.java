@@ -1,5 +1,6 @@
 package com.UserApplication.user_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,7 +18,8 @@ public class User {
     
     @Column(name="username", unique=true)
     private String username;
-    
+
+    @JsonIgnore
     @Column(name="password")
     private String password;
     

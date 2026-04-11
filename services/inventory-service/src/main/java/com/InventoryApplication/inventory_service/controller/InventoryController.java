@@ -65,4 +65,17 @@ public class InventoryController {
         }
         return ResponseEntity.ok(inventoryService.deleteInventory(inventoryId));
     }
+
+
+    @PutMapping("/api/inventory/deduct/{productId}")
+    public ResponseEntity<String> deductStock(
+            @PathVariable String productId,
+            @RequestParam int quantity) {
+        boolean success = inventoryService.deductStock(productId, quantity);
+        if (success) {
+            return ResponseEntity.ok("Stock deducted");
+        }
+        return ResponseEntity.badRequest().body("Insufficient stock");
+    }
+
 }

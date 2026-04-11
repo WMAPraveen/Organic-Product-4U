@@ -20,11 +20,12 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // generate token with username and role embedded
-    public String generateToken(String username, String role) {
+    // generate token with username, role and userId embedded
+    public String generateToken(String username, String role, String userId) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("role", role)
+                .claim("userId", userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
@@ -46,6 +47,10 @@ public class JwtUtil {
 
     public String extractRole(String token) {
         return extractClaims(token).get("role", String.class);
+    }
+
+    public String extractUserId(String token) {
+        return extractClaims(token).get("userId", String.class);
     }
 
     public boolean isTokenValid(String token) {

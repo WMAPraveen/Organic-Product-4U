@@ -35,7 +35,9 @@ public class ProductServiceImpl implements ProductService {
 
     // Define image stored file path....
 
-    private final String IMAGE_UPLOAD_DIRECTORY = "product-images/";
+    // AFTER (configurable)
+    @Value("${app.image.upload-dir:product-images/}")
+    private String IMAGE_UPLOAD_DIRECTORY;
 
     // Create a product...............
 

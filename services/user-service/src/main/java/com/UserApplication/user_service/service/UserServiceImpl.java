@@ -66,7 +66,30 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO updateUser(UserDTO userDTO) {
+    public UserDTO updateUser(String tokenHeader, UserDTO userDTO) {
+        if (tokenHeader != null && tokenHeader.startsWith("Bearer ")) {
+            String token = tokenHeader.substring(7);
+            if (jwtUtil.isTokenValid(token)) {
+                String userId = jwtUtil.extractUserId(token);
+                String username = jwtUtil.extractUsername(token);
+                
+                if (userId != null) {
+                    userDTO.setUserId(userId);
+                    if (userDTO.getUsername() == null || userDTO.getUsername().isBlank()) {
+                        userDTO.setUsername(username);
+                    }
+                } else if (username != null) {
+                    Optional<User> existingUser = userRepository.findByUsername(username);
+                    if (existingUser.isPresent()) {
+                        userDTO.setUserId(existingUser.get().getUserId());
+                        if (userDTO.getUsername() == null || userDTO.getUsername().isBlank()) {
+                            userDTO.setUsername(existingUser.get().getUsername());
+                        }
+                    }
+                }
+            }
+        }
+
         if (userDTO.getUserId() == null) {
             throw new RuntimeException("User ID is required for update.");
         }
@@ -76,7 +99,11 @@ public class UserServiceImpl implements UserService {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             user.setUsername(userDTO.getUsername());
-            user.setPassword(userDTO.getPassword());
+
+            if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
+                user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+            }
+
             user.setEmail(userDTO.getEmail());
             user.setFirstName(userDTO.getFirstName());
             user.setLastName(userDTO.getLastName());
@@ -114,8 +141,8 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword()))
             return null;
 
-        // generate token with username and role
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
+        // generate token with username, role and userId
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole(), user.getUserId());
 
         LoginDTO response = new LoginDTO();
         response.setUserId(user.getUserId());
@@ -129,7 +156,7 @@ public class UserServiceImpl implements UserService {
         UserDTO userDTO = new UserDTO();
         userDTO.setUserId(user.getUserId());
         userDTO.setUsername(user.getUsername());
-        userDTO.setPassword(user.getPassword());
+        userDTO.setPassword(null);
         userDTO.setEmail(user.getEmail());
         userDTO.setRole(user.getRole());
         userDTO.setFirstName(user.getFirstName());

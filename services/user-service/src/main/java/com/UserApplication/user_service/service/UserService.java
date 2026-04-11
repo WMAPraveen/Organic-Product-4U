@@ -10,7 +10,7 @@ public interface UserService {
     UserDTO getUserById(String userId);
     UserDTO getUserByUsername(String username);
     ArrayList<UserDTO> getAllUsers();
-    UserDTO updateUser(UserDTO userDTO);
+    UserDTO updateUser(String tokenHeader, UserDTO userDTO);
     String deleteUser(String userId);
     LoginDTO login(LoginDTO loginDTO);
 }
