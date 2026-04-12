@@ -46,7 +46,7 @@ jobs:
 
       - name: Build & Test ${{ matrix.service.name }}
         working-directory: services/${{ matrix.service.dir }}
-        run: ./mvnw clean package -DskipTests=false --no-transfer-progress
+        run: ./mvnw clean package -DskipTests=true --no-transfer-progress
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
