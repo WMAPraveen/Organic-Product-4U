@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.5</version>  <!-- ✅ Downgraded from 4.0.3 -->
+		<version>3.3.5</version>
 		<relativePath/>
 	</parent>
 	<groupId>com.InventoryApplication</groupId>
@@ -15,8 +15,8 @@
 	<description/>
 
 	<properties>
-		<java.version>21</java.version>  <!-- ✅ Downgraded from 25 -->
-		<spring-cloud.version>2023.0.3</spring-cloud.version>  <!-- ✅ Downgraded from 2025.1.0 -->
+		<java.version>21</java.version>
+		<spring-cloud.version>2023.0.3</spring-cloud.version>
 	</properties>
 
 	<dependencies>
@@ -24,7 +24,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-		<!-- ✅ Renamed from spring-boot-starter-webmvc → spring-boot-starter-web -->
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -32,6 +32,13 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
 		</dependency>
 
 		<dependency>
@@ -45,7 +52,7 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- ✅ Replaced non-existent spring-boot-starter-data-jpa-test and spring-boot-starter-webmvc-test -->
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

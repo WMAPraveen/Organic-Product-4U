@@ -1,37 +1,7 @@
-
-
 version: '3.8'
 
 services:
 
-  # ──────────────────────────────────────────────────────────
-  #  MySQL Database
-  # ──────────────────────────────────────────────────────────
-  #
-  #  WHY mysql:8.0?
-  #  We use the official MySQL image. Your services use
-  #  MySQLDialect which is compatible with MySQL 8.
-  #
-  #  MYSQL_ROOT_PASSWORD:
-  #  Sets the root password. We read it from .env file
-  #  so the actual password never appears in this file.
-  #
-  #  volumes - init.sql:
-  #  Maps our local init.sql into the container's special
-  #  folder. MySQL auto-runs it on first start to create
-  #  all 5 databases.
-  #
-  #  volumes - mysql-data:
-  #  Stores the actual database data on your machine.
-  #  Without this, ALL your data is deleted every time
-  #  the container stops.
-  #
-  #  healthcheck:
-  #  Docker waits until MySQL is truly ready before
-  #  starting any service that depends_on mysql.
-  #  Without this, services start too early and crash
-  #  because MySQL isn't ready yet.
-  # ──────────────────────────────────────────────────────────
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -39,83 +9,45 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
-      - "3306:3306"           # host:container — lets you connect from DBeaver/MySQL Workbench
+      - "3306:3306"
     volumes:
-      - mysql-data:/var/lib/mysql                                    # persists database data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql             # creates all databases on first boot
+      - mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - microservices-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s     # check every 10 seconds
-      timeout: 5s       # fail if no response in 5s
-      retries: 10       # try 10 times before giving up
-
-
-  # ──────────────────────────────────────────────────────────
-  #  Discovery Server (Eureka)
-  # ──────────────────────────────────────────────────────────
-  #
-  #  WHY start this first?
-  #  Every other service registers itself with Eureka on
-  #  startup. If Eureka isn't running, they'll fail to
-  #  register and won't be discoverable by the gateway.
-  #
-  #  No database needed — Eureka keeps everything in memory.
-  #
-  #  healthcheck:
-  #  Waits until the Eureka dashboard is actually responding
-  #  before other services start registering.
-  # ──────────────────────────────────────────────────────────
-  discovery-server:
-    image: discovery-server:latest
-    container_name: discovery-server
-    restart: unless-stopped
-    ports:
-      - "8761:8761"           # Eureka dashboard: http://localhost:8761
-    networks:
-      - microservices-net
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761"]
-      interval: 15s
+      interval: 10s
       timeout: 5s
       retries: 10
 
+  discovery-server:
+    image: ${DOCKERHUB_USERNAME}/discovery-server:latest
+    container_name: discovery-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    volumes:
+      - ./discovery-server/target/discovery-server-0.0.1-SNAPSHOT.jar:/app/app.jar
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8761 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
 
-  # ──────────────────────────────────────────────────────────
-  #  API Gateway
-  # ──────────────────────────────────────────────────────────
-  #
-  #  The single entry point for ALL external requests.
-  #  Your React frontend talks ONLY to port 8080.
-  #  The gateway routes each request to the correct service.
-  #
-  #  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:
-  #  Overrides eureka.client.service-url.defaultZone
-  #  from "http://localhost:8761/eureka/"
-  #  to   "http://discovery-server:8761/eureka/"
-  #  "discovery-server" = the container name above.
-  #  Docker's internal DNS resolves container names automatically.
-  #
-  #  JWT_SECRET:
-  #  The gateway validates JWT tokens on every protected route.
-  #  Must be IDENTICAL to the secret in user-service.
-  #  Comes from .env file.
-  #
-  #  depends_on with condition: service_healthy:
-  #  Gateway won't start until discovery-server passes
-  #  its healthcheck. This prevents startup race conditions.
-  # ──────────────────────────────────────────────────────────
   api-gateway:
-    image: api-gateway:latest
+    image: ${DOCKERHUB_USERNAME}/api-gateway:latest
     container_name: api-gateway
     restart: unless-stopped
     ports:
-      - "8080:8080"           # All frontend requests go here
+      - "8080:8080"
+    volumes:
+      - ./api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar:/app/app.jar
     environment:
-      # Overrides eureka.client.service-url.defaultZone
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      # Overrides jwt.secret
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
       discovery-server:
@@ -123,49 +55,20 @@ services:
     networks:
       - microservices-net
 
-
-  # ──────────────────────────────────────────────────────────
-  #  User Service  (port 8085)
-  # ──────────────────────────────────────────────────────────
-  #
-  #  Handles: register, login, user CRUD
-  #  Database: user_service
-  #
-  #  SPRING_DATASOURCE_URL:
-  #  Overrides spring.datasource.url
-  #  "mysql" = the MySQL container name above.
-  #  Docker resolves "mysql" to the container's IP automatically.
-  #
-  #  SPRING_DATASOURCE_PASSWORD:
-  #  Overrides spring.datasource.password (which was blank).
-  #  Must match MYSQL_ROOT_PASSWORD in .env.
-  #
-  #  JWT_SECRET:
-  #  User-service CREATES tokens. Gateway VALIDATES tokens.
-  #  Both must use the exact same secret — both read from .env.
-  #
-  #  depends_on mysql + discovery-server:
-  #  Service needs DB to be ready AND Eureka to be ready
-  #  before it starts.
-  # ──────────────────────────────────────────────────────────
   user-service:
-    image: user-service:latest
+    image: ${DOCKERHUB_USERNAME}/user-service:latest
     container_name: user-service
     restart: unless-stopped
     ports:
-      - "8085:8085"           # Optional: direct access for testing
+      - "8085:8085"
+    volumes:
+      - ./user-service/target/user-service-0.0.1-SNAPSHOT.jar:/app/app.jar
     environment:
-      # Overrides spring.datasource.url
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/user_service
-      # Overrides spring.datasource.username
       - SPRING_DATASOURCE_USERNAME=root
-      # Overrides spring.datasource.password
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      # Overrides eureka.client.service-url.defaultZone
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      # Overrides jwt.secret
       - JWT_SECRET=${JWT_SECRET}
-      # Overrides jwt.expiration (86400000 ms = 24 hours)
       - JWT_EXPIRATION=86400000
     depends_on:
       mysql:
@@ -175,24 +78,14 @@ services:
     networks:
       - microservices-net
 
-
-  # ──────────────────────────────────────────────────────────
-  #  Category Service  (port 8082)
-  # ──────────────────────────────────────────────────────────
-  #
-  #  Handles: category CRUD
-  #  Database: category_service
-  #
-  #  Same pattern as user-service.
-  #  No JWT secret needed — gateway handles token validation
-  #  before requests reach this service.
-  # ──────────────────────────────────────────────────────────
   category-service:
-    image: category-service:latest
+    image: ${DOCKERHUB_USERNAME}/category-service:latest
     container_name: category-service
     restart: unless-stopped
     ports:
       - "8082:8082"
+    volumes:
+      - ./category-service/target/category-service-0.0.1-SNAPSHOT.jar:/app/app.jar
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/category_service
       - SPRING_DATASOURCE_USERNAME=root
@@ -206,45 +99,21 @@ services:
     networks:
       - microservices-net
 
-
-  # ──────────────────────────────────────────────────────────
-  #  Product Service  (port 8081)
-  # ──────────────────────────────────────────────────────────
-  #
-  #  Handles: product CRUD + image uploads
-  #  Database: product_service
-  #
-  #  APP_IMAGE_BASE_URL:
-  #  Overrides app.image.base-url
-  #  Was: http://localhost:8081/product-images/
-  #  Now: http://localhost:8080/api/product-images/
-  #  Clients access images through the GATEWAY (8080), not
-  #  the product-service directly (8081).
-  #  Note: Spring Boot maps "app.image.base-url" to
-  #  "APP_IMAGE_BASE_URL" — dots become underscores, all caps.
-  #
-  #  volumes - product-images:
-  #  Image files are stored at /app/product-images/ inside
-  #  the container. This volume maps that path to a persistent
-  #  storage location on your machine.
-  #  Without this: images are deleted when container restarts.
-  #  With this: images survive restarts forever.
-  # ──────────────────────────────────────────────────────────
   product-service:
-    image: product-service:latest
+    image: ${DOCKERHUB_USERNAME}/product-service:latest
     container_name: product-service
     restart: unless-stopped
     ports:
       - "8081:8081"
+    volumes:
+      - ./product-service/target/product-service-0.0.1-SNAPSHOT.jar:/app/app.jar
+      - product-images:/app/product-images
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/product_service
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
-      # Overrides app.image.base-url
       - APP_IMAGE_BASE_URL=http://localhost:8080/api/product-images/
-    volumes:
-      - product-images:/app/product-images   # persists uploaded product images
     depends_on:
       mysql:
         condition: service_healthy
@@ -253,20 +122,14 @@ services:
     networks:
       - microservices-net
 
-
-  # ──────────────────────────────────────────────────────────
-  #  Inventory Service  (port 8083)
-  # ──────────────────────────────────────────────────────────
-  #
-  #  Handles: stock levels per product
-  #  Database: inventory_service
-  # ──────────────────────────────────────────────────────────
   inventory-service:
-    image: inventory-service:latest
+    image: ${DOCKERHUB_USERNAME}/inventory-service:latest
     container_name: inventory-service
     restart: unless-stopped
     ports:
       - "8083:8083"
+    volumes:
+      - ./inventory-service/target/inventory-service-0.0.1-SNAPSHOT.jar:/app/app.jar
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/inventory_service
       - SPRING_DATASOURCE_USERNAME=root
@@ -280,20 +143,14 @@ services:
     networks:
       - microservices-net
 
-
-  # ──────────────────────────────────────────────────────────
-  #  Order Service  (port 8084)
-  # ──────────────────────────────────────────────────────────
-  #
-  #  Handles: order CRUD, calls user/product/inventory services
-  #  Database: order_service
-  # ──────────────────────────────────────────────────────────
   order-service:
-    image: order-service:latest
+    image:  ${DOCKERHUB_USERNAME}/order-service:latest
     container_name: order-service
     restart: unless-stopped
     ports:
       - "8084:8084"
+    volumes:
+      - ./order-service/target/order-service-0.0.1-SNAPSHOT.jar:/app/app.jar
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/order_service
       - SPRING_DATASOURCE_USERNAME=root
@@ -307,39 +164,10 @@ services:
     networks:
       - microservices-net
 
-
-# ──────────────────────────────────────────────────────────
-#  Volumes
-# ──────────────────────────────────────────────────────────
-#
-#  Named volumes are managed by Docker and stored on your
-#  machine automatically. You don't need to create folders.
-#
-#  mysql-data:    All MySQL databases and table data
-#  product-images: All uploaded product image files
-#
-#  To see where Docker stores them:
-#    docker volume inspect services_mysql-data
-#
-#  To delete all data and start fresh:
-#    docker compose down -v
-# ──────────────────────────────────────────────────────────
 volumes:
   mysql-data:
   product-images:
 
-
-# ──────────────────────────────────────────────────────────
-#  Networks
-# ──────────────────────────────────────────────────────────
-#
-#  All containers join "microservices-net".
-#  This means they can reach each other using container names
-#  as hostnames (e.g. "mysql", "discovery-server").
-#
-#  Containers on different networks CANNOT talk to each other,
-#  which is a useful security isolation feature.
-# ──────────────────────────────────────────────────────────
 networks:
   microservices-net:
     driver: bridge

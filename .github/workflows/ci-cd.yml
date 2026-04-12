@@ -1,1 +1,105 @@
 
+name: CI/CD Pipeline (Docker Hub)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
+jobs:
+
+  build-and-test:
+    name: Build & Test – ${{ matrix.service.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - name: discovery-server
+            dir: discovery-server
+          - name: api-gateway
+            dir: api-gateway
+          - name: user-service
+            dir: user-service
+          - name: category-service
+            dir: category-service
+          - name: product-service
+            dir: product-service
+          - name: inventory-service
+            dir: inventory-service
+          - name: order-service
+            dir: order-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Test ${{ matrix.service.name }}
+        working-directory: services/${{ matrix.service.dir }}
+        run: ./mvnw clean package -DskipTests=false --no-transfer-progress
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service.name }}-jar
+          path: services/${{ matrix.service.dir }}/target/*.jar
+          retention-days: 1
+
+
+  build-and-push:
+    name: Push to Docker Hub – ${{ matrix.service.name }}
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    strategy:
+      matrix:
+        service:
+          - name: discovery-server
+            dir: discovery-server
+          - name: api-gateway
+            dir: api-gateway
+          - name: user-service
+            dir: user-service
+          - name: category-service
+            dir: category-service
+          - name: product-service
+            dir: product-service
+          - name: inventory-service
+            dir: inventory-service
+          - name: order-service
+            dir: order-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.service.name }}-jar
+          path: services/${{ matrix.service.dir }}/target/
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & push ${{ matrix.service.name }}
+        uses: docker/build-push-action@v5
+        with:
+          context: services/${{ matrix.service.dir }}
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service.name }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.service.name }}:${{ github.sha }}

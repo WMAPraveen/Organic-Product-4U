@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>  <!-- ✅ Was 3.5.13 — aligned to 3.3.5 to match all other services -->
+        <version>3.3.5</version>
         <relativePath/>
     </parent>
     <groupId>com.ApiGatewayApplication</groupId>
@@ -15,17 +15,12 @@
     <description/>
 
     <properties>
-        <java.version>21</java.version>  <!-- ✅ Already correct, no change needed -->
-        <spring-cloud.version>2023.0.3</spring-cloud.version>  <!-- ✅ Aligned from 2025.0.1 -->
+        <java.version>21</java.version>
+        <spring-cloud.version>2023.0.3</spring-cloud.version>
     </properties>
 
     <dependencies>
-        <!--
-            ✅ FIXED: was "spring-cloud-starter-gateway-server-webflux"
-            That artifact only exists in Spring Cloud 2025.0.0+.
-            In Spring Cloud 2023.0.x the correct artifact is "spring-cloud-starter-gateway".
-            Same WebFlux-based reactive gateway, just the old name.
-        -->
+
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
@@ -44,6 +39,13 @@
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
