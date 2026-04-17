@@ -164,6 +164,69 @@ services:
     networks:
       - microservices-net
 
+  cart-service:
+    image:  ${DOCKERHUB_USERNAME}/cart-service:latest
+    container_name: cart-service
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./cart-service/target/cart-service-0.0.1-SNAPSHOT.jar:/app/app.jar
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cart_service
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  payment-service:
+    image:  ${DOCKERHUB_USERNAME}/payment-service:latest
+    container_name: payment-service
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    volumes:
+      - ./payment-service/target/payment-service-0.0.1-SNAPSHOT.jar:/app/app.jar
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/payment_service
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
+  review-service:
+    image:  ${DOCKERHUB_USERNAME}/review-service:latest
+    container_name: review-service
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./review-service/target/review-service-0.0.1-SNAPSHOT.jar:/app/app.jar
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/review_service
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://discovery-server:8761/eureka/
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - microservices-net
+
 volumes:
   mysql-data:
   product-images:
