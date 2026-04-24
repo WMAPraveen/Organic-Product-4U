@@ -1,7 +1,7 @@
 // src/pages/Profile.jsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { updateUser } from '../utils/api'
+import { updateUser, fetchUserById } from '../utils/api'
 import toast from 'react-hot-toast'
 import { User, Save, Shield, Mail, AlignLeft } from 'lucide-react'
 
@@ -16,6 +16,32 @@ export default function Profile() {
     password: '',
   })
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (user?.userId) {
+      fetchUserById(user.userId)
+        .then((res) => {
+          const fetchedUser = res.data
+          setForm({
+            userId: fetchedUser.userId || user.userId,
+            username: fetchedUser.username || user.username,
+            email: fetchedUser.email || '',
+            firstName: fetchedUser.firstName || '',
+            lastName: fetchedUser.lastName || '',
+            password: '',
+          })
+        })
+        .catch(() => {
+          toast.error('Failed to load profile details')
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    } else {
+      setLoading(false)
+    }
+  }, [user])
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -48,8 +74,14 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Role badge */}
-        <div className="card mb-6 flex items-center gap-3 p-4">
+        {loading ? (
+          <div className="flex justify-center my-12">
+            <div className="w-8 h-8 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <>
+            {/* Role badge */}
+            <div className="card mb-6 flex items-center gap-3 p-4">
           <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-500 rounded-full flex items-center justify-center font-bold text-xl">
             {user?.username?.[0]?.toUpperCase()}
           </div>
@@ -110,6 +142,8 @@ export default function Profile() {
             </button>
           </form>
         </div>
+          </>
+        )}
       </div>
     </div>
   )

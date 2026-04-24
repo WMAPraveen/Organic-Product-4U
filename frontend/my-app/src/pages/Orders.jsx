@@ -4,9 +4,11 @@ import { fetchOrdersByUser, deleteOrder } from '../utils/api'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import Loader from '../components/Loader'
-import { ShoppingBag, Trash2, Package, Clock, CheckCircle, XCircle } from 'lucide-react'
+import { ShoppingBag, Trash2, Package, Clock, CheckCircle, XCircle, Truck } from 'lucide-react'
 
 const statusConfig = {
+  PLACED: { label: 'Placed', icon: CheckCircle, cls: 'badge-green' },
+  SHIPPED: { label: 'Shipped', icon: Truck, cls: 'badge-blue' },
   PENDING: { label: 'Pending', icon: Clock, cls: 'badge-yellow' },
   CONFIRMED: { label: 'Confirmed', icon: CheckCircle, cls: 'badge-green' },
   CANCELLED: { label: 'Cancelled', icon: XCircle, cls: 'badge-red' },

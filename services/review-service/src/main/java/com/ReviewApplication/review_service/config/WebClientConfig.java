@@ -1,4 +1,4 @@
-package com.ProductApplication.product_service.config;
+package com.ReviewApplication.review_service.config;
 
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -13,5 +13,4 @@ public class WebClientConfig {
     public WebClient.Builder webClientBuilder() {
         return WebClient.builder();
     }
-
 }

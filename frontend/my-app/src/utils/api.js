@@ -74,3 +74,21 @@ export const fetchUsers = () => api.get('/userlist')
 export const fetchUserById = (id) => api.get(`/user/${id}`)
 export const updateUser = (data) => api.put('/updateuser', data)
 export const deleteUser = (id) => api.delete(`/deleteuser/${id}`)
+
+// ── Reviews ───────────────────────────────────────────────────────────────────
+export const fetchAllReviews = () => api.get('/reviews')
+export const fetchReviewsByProduct = (productId) => api.get(`/reviews/product/${productId}`)
+export const fetchReviewsByUser = (userId) => api.get(`/reviews/user/${userId}`)
+export const addReview = (data) => api.post('/reviews', data)
+export const updateReview = (id, data) => api.put(`/reviews/${id}`, data)
+export const deleteReview = (id) => api.delete(`/reviews/${id}`)
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+export const createCheckoutSession = (data) => api.post('/payment/create-checkout-session', data)
+
+// ── Cart ──────────────────────────────────────────────────────────────────────
+export const fetchCartByUser = (userId) => api.get(`/cart/user/${userId}`)
+export const addToCartApi = (data) => api.post('/cart/add', data)
+export const updateCartItemApi = (id, data) => api.put(`/cart/update/${id}`, data)
+export const removeCartItemApi = (id) => api.delete(`/cart/remove/${id}`)
+export const clearCartApi = (userId) => api.delete(`/cart/clear/${userId}`)

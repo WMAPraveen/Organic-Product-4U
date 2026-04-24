@@ -31,7 +31,7 @@ public class OrderServiceImpl implements OrderService {
             return webClientBuilder.build()
                     .get()
                     .uri("http://user-service/api/user/" + userId)
-                    .header("X-User-Role", "ADMIN") // internal service-to-service call
+                    .header("X-User-Role", "ADMIN")
                     .retrieve()
                     .bodyToMono(UserDTO.class)
                     .block();
@@ -45,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
             return webClientBuilder.build()
                     .get()
                     .uri("http://product-service/api/product/" + productId)
-                    .header("X-User-Role", "ADMIN") // internal service-to-service call
+                    .header("X-User-Role", "ADMIN")
                     .retrieve()
                     .bodyToMono(ProductDTO.class)
                     .block();

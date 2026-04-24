@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.UserApplication.user_service.util.JwtUtil;
 
 
 @RestController
@@ -13,6 +14,9 @@ public class UserController {
 
     @Autowired
     UserService userService;
+
+    @Autowired
+    JwtUtil jwtUtil;
 
     //  anyone can register (no token needed)
     @PostMapping(value = "/api/register")
@@ -25,15 +29,28 @@ public class UserController {
         }
     }
 
-    //  ADMIN only — get user by id
+    //  ADMIN or self — get user by id
     @GetMapping(value = "/api/user/{userId}")
     public ResponseEntity<?> getUserById(
             @PathVariable String userId,
-            @RequestHeader(value = "X-User-Role", required = false) String role) {
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
-        if (!"ADMIN".equals(role)) {
+        boolean isAuthorized = "ADMIN".equals(role);
+
+        if (!isAuthorized && authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (jwtUtil.isTokenValid(token)) {
+                String tokenUserId = jwtUtil.extractUserId(token);
+                if (userId.equals(tokenUserId)) {
+                    isAuthorized = true;
+                }
+            }
+        }
+
+        if (!isAuthorized) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Access denied — admin only");
+                    .body("Access denied — admin only or unauthorized");
         }
         return ResponseEntity.ok(userService.getUserById(userId));
     }

@@ -2,7 +2,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
-  LayoutDashboard, Package, Tag, Boxes, ShoppingBag, Users, Leaf, ChevronRight
+  LayoutDashboard, Package, Tag, Boxes, ShoppingBag, Users, Leaf, ChevronRight, MessageSquare
 } from 'lucide-react'
 
 const links = [
@@ -12,6 +12,7 @@ const links = [
   { to: '/admin/inventory', label: 'Inventory', icon: Boxes },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/reviews', label: 'Reviews', icon: MessageSquare },
 ]
 
 export default function AdminLayout() {
